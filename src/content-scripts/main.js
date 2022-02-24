@@ -104,13 +104,26 @@ const decorateShoppingBestResult = () => {
 };
 
 const decorateShoppingOtherResults = () => {
-  document.querySelectorAll('.sh-pr__product-results .sh-dlr__list-result .shntl').forEach((element) => {
-    const bestResultItemHref = `${window.location.origin}/${element.getAttribute('href')}`;
+  document.querySelectorAll('.sh-pr__product-results > div').forEach((element) => {
+    const itemAnchor = element.querySelector('a.shntl');
+    if (itemAnchor) {
+      const itemHref = itemAnchor.getAttribute('href').replace('/url?url=', '');
 
-    const discount = generateDiscount(bestResultItemHref);
-    discount.dataset.decode = true;
+      // Special cases for products that link to a Google page for shopping, not a Merchant
+      if (!itemHref.startsWith('/shopping/product')) {
+        const discount = generateDiscount(itemHref);
+        discount.dataset.absolute = true;
 
-    element.append(discount);
+        const container = itemAnchor.closest('.sh-dgr__content');
+
+        if (container.previousElementSibling && container.previousElementSibling.innerText) {
+          discount.dataset.top = '32px';
+          discount.dataset.left = '8px';
+        }
+
+        container.append(discount);
+      }
+    }
   });
 };
 
@@ -131,23 +144,24 @@ const init = () => {
 
   // Shopping page
 
-  // decorateShoppingAdResults();
+  decorateShoppingAdResults();
+  // Best results aren't immediately in the page
+  setTimeout(() => {
+    decorateShoppingBestResult();
+  }, 2000);
 
-  // // Best results aren't immediately in the page
-  // setTimeout(() => {
-  //   decorateShoppingBestResult();
-  // }, 2000);
-
-  // decorateShoppingOtherResults();
+  decorateShoppingOtherResults();
 
   document.querySelectorAll('.sc-promo').forEach((element) => {
     new Vue({
       render: (h) => {
         return h(DiscountRibbon, {
           props: {
-            url: element.dataset.discountUrl,
             absolute: Boolean(element.dataset.absolute),
             decode: Boolean(element.dataset.decode),
+            left: element.dataset.left,
+            top: element.dataset.top,
+            url: element.dataset.discountUrl,
           },
         });
       },

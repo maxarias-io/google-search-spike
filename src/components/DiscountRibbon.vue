@@ -1,5 +1,11 @@
 <template>
-  <div v-show="!removed" class="discount-ribbon" :class="{ show: !hide, absolute }" ref="discountRibbon">
+  <div
+    v-show="!removed"
+    class="discount-ribbon"
+    :class="{ show: !hide, absolute }"
+    ref="discountRibbon"
+    :style="computedStyles"
+  >
     <div class="button-content">
       <div class="button-text-container">
         <div class="button-logo-container">
@@ -15,7 +21,7 @@
 </template>
 
 <script>
-import { defineComponent, onMounted, onBeforeUnmount, ref } from '@vue/composition-api';
+import { defineComponent, onMounted, onBeforeUnmount, ref, computed } from '@vue/composition-api';
 import Logo from '../assets/logo.svg?inline';
 import { sendMessageToBackground } from '../utils/extension-messenger';
 
@@ -25,10 +31,6 @@ export default defineComponent({
     Logo,
   },
   props: {
-    url: {
-      type: String,
-      required: true,
-    },
     absolute: {
       type: Boolean,
       default: false,
@@ -36,6 +38,18 @@ export default defineComponent({
     decode: {
       type: Boolean,
       default: false,
+    },
+    url: {
+      type: String,
+      required: true,
+    },
+    top: {
+      type: String,
+      default: '',
+    },
+    left: {
+      type: String,
+      default: '',
     },
   },
   setup(props) {
@@ -45,18 +59,21 @@ export default defineComponent({
     const discount = ref('');
     const discountRibbon = ref(null);
 
+    const computedStyles = computed(() => {
+      return {
+        ...(props.top ? { top: props.top } : {}),
+        ...(props.left ? { left: props.left } : {}),
+      };
+    });
+
     let intersectionObserver = null;
 
     const fetchData = () => {
       if (props.decode) {
-        decodeUrl.then((url) => fetchMerchant(url));
+        sendMessageToBackground('DECODE_GOOGLE_URL', props.url).then((url) => fetchMerchant(url));
       } else {
         fetchMerchant(props.url);
       }
-    };
-
-    const decodeUrl = () => {
-      return sendMessageToBackground('DECODE_GOOGLE_URL', props.url);
     };
 
     const fetchMerchant = (url) => {
@@ -101,6 +118,7 @@ export default defineComponent({
       hide,
       removed,
       discountRibbon,
+      computedStyles,
     };
   },
 });
@@ -133,7 +151,7 @@ export default defineComponent({
   justify-content: center;
   align-items: center;
   border-radius: 12px;
-  color: #fff;
+  color: #fff !important;
 }
 
 .button-logo-container {
@@ -154,7 +172,7 @@ export default defineComponent({
     margin-right: 6px;
 
     .logo-circle {
-      fill: #fff;
+      fill: #fff !important;
     }
   }
 
