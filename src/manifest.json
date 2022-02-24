@@ -1,0 +1,18 @@
+{
+  "manifest_version": 2,
+  "name": "Google Extension Spike",
+  "homepage_url": "https://demand.io/",
+  "background": {
+    "scripts": ["js/background.js"],
+    "persistent": false
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.google.com/*"],
+      "js": ["js/main.js"]
+    }
+  ],
+  "permissions": ["*://*/*"],
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'; img-src 'self' data: https://*;",
+  "web_accessible_resources": ["js/*.map", "img/*"]
+}
