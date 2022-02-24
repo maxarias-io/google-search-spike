@@ -5,8 +5,6 @@ const postcssPresetEnv = require('postcss-preset-env');
 const postcssReporter = require('postcss-reporter');
 const postcssAssets = require('postcss-assets');
 const cssNano = require('cssnano');
-const tailwindcss = require('tailwindcss');
-const autoprefixer = require('autoprefixer');
 
 module.exports = {
   plugins: [
@@ -24,7 +22,5 @@ module.exports = {
     postcssReporter({
       clearMessages: true,
     }),
-    tailwindcss,
-    autoprefixer,
   ],
 };
