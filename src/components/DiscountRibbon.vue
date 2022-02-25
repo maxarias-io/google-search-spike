@@ -7,7 +7,7 @@
     :style="computedStyles"
   >
     <div class="button-content">
-      <div class="button-text-container">
+      <div class="button-text-container" :class="{ 'has-discount': !loading && discount }">
         <div class="button-logo-container">
           <Logo class="button-logo" width="16" height="16" />
         </div>
@@ -35,10 +35,6 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
-    decode: {
-      type: Boolean,
-      default: false,
-    },
     url: {
       type: String,
       required: true,
@@ -54,7 +50,7 @@ export default defineComponent({
   },
   setup(props) {
     const removed = ref(false);
-    const hide = ref(false);
+    const hide = ref(true);
     const loading = ref(true);
     const discount = ref('');
     const discountRibbon = ref(null);
@@ -69,8 +65,10 @@ export default defineComponent({
     let intersectionObserver = null;
 
     const fetchData = () => {
-      if (props.decode) {
-        sendMessageToBackground('DECODE_GOOGLE_URL', props.url).then((url) => fetchMerchant(url));
+      if (props.url.startsWith('/aclk?')) {
+        sendMessageToBackground('DECODE_GOOGLE_URL', `https://www.google.com/${props.url}`).then((url) =>
+          fetchMerchant(url),
+        );
       } else {
         fetchMerchant(props.url);
       }
@@ -78,7 +76,6 @@ export default defineComponent({
 
     const fetchMerchant = (url) => {
       sendMessageToBackground('LOOK_UP_MERCHANT', url).then((merchant) => {
-        return;
         if (merchant && merchant.bestPercentOff > 0) {
           loading.value = false;
           discount.value = `Up to ${merchant.bestPercentOff}% off`;
@@ -104,7 +101,9 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      intersectionObserver = new IntersectionObserver(handleIntersection, { threshold: 1 });
+      setTimeout(() => (hide.value = false), 100);
+
+      intersectionObserver = new IntersectionObserver(handleIntersection, { threshold: 0.25 });
       intersectionObserver.observe(discountRibbon.value);
     });
 
@@ -164,6 +163,10 @@ export default defineComponent({
   display: flex;
   justify-content: center;
   align-items: center;
+
+  &.has-discount {
+    min-width: 130px;
+  }
 
   .button-logo {
     width: 12px;

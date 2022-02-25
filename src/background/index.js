@@ -140,9 +140,7 @@ export const lookupMerchantIdFromURL = async (url) => {
 
 onMessage('DECODE_GOOGLE_URL', async (url) => {
   return fetch(url, { method: 'HEAD' })
-    .then((result) => {
-      console.log({ result });
-    })
+    .then((result) => result.url || null)
     .catch(() => null);
 });
 

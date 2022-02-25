@@ -7,15 +7,9 @@ Vue.use(VueCompositionAPI);
 
 console.log('init content script');
 
+const GOOGLE_TAGS = ['SALE', 'CURBSIDE', 'LOW PRICE', 'FREE 2-DAY', 'GREAT PICK', 'PRICE DROP'];
+
 const decorateSearchResults = () => {
-  // Mobile search results.
-  document.querySelectorAll('#tads a[role="presentation"], #rso a[role="presentation"]').forEach((element) => {
-    const searchResultItemHref = element.parentElement.getAttribute('href');
-    const discount = generateDiscount(searchResultItemHref);
-
-    element.insertBefore(discount, element.firstChild);
-  });
-
   // Only run these on Desktop resolution
   if (window.innerWidth > 768) {
     // Desktop Ads
@@ -39,6 +33,14 @@ const decorateSearchResults = () => {
 
         element.insertBefore(discount, element.firstChild);
       }
+    });
+  } else {
+    // Mobile search results.
+    document.querySelectorAll('#tads a[role="presentation"], #rso a[role="presentation"]').forEach((element) => {
+      const searchResultItemHref = element.parentElement.getAttribute('href');
+      const discount = generateDiscount(searchResultItemHref);
+
+      element.insertBefore(discount, element.firstChild);
     });
   }
 };
@@ -74,57 +76,132 @@ const decorateRichResults = () => {
 
     const discount = generateDiscount(itemHref);
     discount.dataset.absolute = true;
-    discount.dataset.decode = true;
 
     element.firstElementChild.append(discount);
   });
 };
 
+// Decorates Shopping page Ads
 const decorateShoppingAdResults = () => {
-  document.querySelectorAll('.sh-sr__shop-result-group .sh-np__click-target').forEach((element) => {
-    const shoppingItemHref = `${window.location.origin}/${element.getAttribute('href')}`;
+  if (window.innerWidth > 768) {
+    document.querySelectorAll('.sh-sr__shop-result-group .sh-np__click-target').forEach((element) => {
+      const shoppingItemHref = element.getAttribute('href');
 
-    const discount = generateDiscount(shoppingItemHref);
-    discount.dataset.decode = true;
+      const discount = generateDiscount(shoppingItemHref);
+      discount.dataset.absolute = true;
 
-    const sellerContainer = element.querySelector('.sh-np__seller-container');
-    sellerContainer.append(discount);
-  });
+      const saleElement = Array.from(element.querySelectorAll('div')).find((el) =>
+        GOOGLE_TAGS.includes(el.textContent.toUpperCase()),
+      );
+
+      if (saleElement) {
+        discount.dataset.top = '32px';
+        discount.dataset.left = '8px';
+      }
+
+      const sellerContainer = element.closest('.sh-np__click-target');
+      sellerContainer.append(discount);
+    });
+  } else {
+    document.querySelectorAll('.sh-sr__tau .sh-np__click-target').forEach((element) => {
+      const itemHref = element.getAttribute('href');
+      const discount = generateDiscount(itemHref);
+      discount.dataset.absolute = true;
+
+      const saleElement = Array.from(element.querySelectorAll('div')).find((el) =>
+        GOOGLE_TAGS.includes(el.textContent.toUpperCase()),
+      );
+
+      if (saleElement) {
+        discount.dataset.top = '32px';
+        discount.dataset.left = '8px';
+      }
+
+      element.append(discount);
+    });
+  }
 };
 
+// Best result, Desktop only, doesn't always popup
 const decorateShoppingBestResult = () => {
   document.querySelectorAll('.sh-pr__product-results .sh-dp__cont .pspo-fade .shntl').forEach((element) => {
-    const bestResultItemHref = `${window.location.origin}/${element.getAttribute('href')}`;
+    const bestResultItemHref = element.getAttribute('href');
 
     const discount = generateDiscount(bestResultItemHref);
-    discount.dataset.decode = true;
 
     element.parentNode.insertBefore(discount, element.nextSibling);
   });
 };
 
-const decorateShoppingOtherResults = () => {
-  document.querySelectorAll('.sh-pr__product-results > div').forEach((element) => {
-    const itemAnchor = element.querySelector('a.shntl');
-    if (itemAnchor) {
-      const itemHref = itemAnchor.getAttribute('href').replace('/url?url=', '');
+const decorateShoppingSearchResults = () => {
+  if (window.innerWidth > 768) {
+    document.querySelectorAll('.sh-pr__product-results > div').forEach((element) => {
+      const itemAnchor = element.querySelector('a.shntl');
+      if (itemAnchor) {
+        const itemHref = itemAnchor.getAttribute('href').replace('/url?url=', '');
 
-      // Special cases for products that link to a Google page for shopping, not a Merchant
-      if (!itemHref.startsWith('/shopping/product')) {
+        // Special cases for products that link to a Google page for shopping, not a Merchant
+        if (!itemHref.startsWith('/shopping/product')) {
+          const discount = generateDiscount(itemHref);
+          discount.dataset.absolute = true;
+
+          const container = itemAnchor.closest('.sh-dgr__content');
+
+          if (container.previousElementSibling && container.previousElementSibling.innerText) {
+            discount.dataset.top = '32px';
+            discount.dataset.left = '8px';
+          }
+
+          container.append(discount);
+        }
+      }
+    });
+  } else {
+    // Mobile Shopping page
+    document
+      .querySelectorAll('.sh-pr__product-results .sh-pr__product-result .sh-pr__secondary-container a')
+      .forEach((element) => {
+        const itemHref = element.getAttribute('href').replace('/url?q=', '');
         const discount = generateDiscount(itemHref);
         discount.dataset.absolute = true;
 
-        const container = itemAnchor.closest('.sh-dgr__content');
+        const container = element.closest('.sh-pr__product-result');
 
-        if (container.previousElementSibling && container.previousElementSibling.innerText) {
+        const saleElement = Array.from(container.querySelectorAll('div + div')).find((el) =>
+          GOOGLE_TAGS.includes(el.textContent.toUpperCase()),
+        );
+
+        if (saleElement) {
           discount.dataset.top = '32px';
           discount.dataset.left = '8px';
         }
 
         container.append(discount);
+      });
+  }
+};
+
+const decorateShoppingTopReviews = () => {
+  document
+    .querySelectorAll('#sh-sr__results .smsrc .sh-pr__product-result .sh-pr__secondary-container a')
+    .forEach((element) => {
+      const itemHref = element.getAttribute('href').replace('/url?q=', '');
+      const discount = generateDiscount(itemHref);
+      discount.dataset.absolute = true;
+
+      const container = element.closest('.sh-pr__product-result');
+
+      const saleElement = Array.from(container.querySelectorAll('div + div')).find((el) =>
+        GOOGLE_TAGS.includes(el.textContent.toUpperCase()),
+      );
+
+      if (saleElement) {
+        discount.dataset.top = '32px';
+        discount.dataset.left = '8px';
       }
-    }
-  });
+
+      container.append(discount);
+    });
 };
 
 // Generates the discount Div
@@ -134,6 +211,21 @@ const generateDiscount = (url) => {
   div.dataset.discountUrl = url;
 
   return div;
+};
+
+const createVueInstance = (element) => {
+  new Vue({
+    render: (h) => {
+      return h(DiscountRibbon, {
+        props: {
+          absolute: Boolean(element.dataset.absolute),
+          left: element.dataset.left,
+          top: element.dataset.top,
+          url: element.dataset.discountUrl,
+        },
+      });
+    },
+  }).$mount(element);
 };
 
 const init = () => {
@@ -150,22 +242,11 @@ const init = () => {
     decorateShoppingBestResult();
   }, 2000);
 
-  decorateShoppingOtherResults();
+  decorateShoppingSearchResults();
+  decorateShoppingTopReviews();
 
   document.querySelectorAll('.sc-promo').forEach((element) => {
-    new Vue({
-      render: (h) => {
-        return h(DiscountRibbon, {
-          props: {
-            absolute: Boolean(element.dataset.absolute),
-            decode: Boolean(element.dataset.decode),
-            left: element.dataset.left,
-            top: element.dataset.top,
-            url: element.dataset.discountUrl,
-          },
-        });
-      },
-    }).$mount(element);
+    createVueInstance(element);
   });
 };
 
