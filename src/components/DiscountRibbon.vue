@@ -126,10 +126,11 @@ export default defineComponent({
 <style lang="postcss" scoped>
 .discount-ribbon {
   opacity: 0;
-  transition: opacity 250ms ease-in 200ms;
+  transition: opacity 250ms ease-in 200ms, min-width 250ms ease-in 200ms;
   width: fit-content;
   margin: 4px 0;
   z-index: 100;
+  font-size: 14px;
 
   &.show {
     opacity: 1;

@@ -152,20 +152,30 @@ onMessage('LOOK_UP_MERCHANT', async (url) => {
           return resolve(null);
         }
 
+        // Find the Merchant
         axios
           .get(`https://api.simplycodes.com/v1/merchant/${lookupResults.merchantId}`)
           .then((result) => {
             if (result.data.merchants.length > 0) {
-              return resolve(result.data.merchants[0]);
+              // If found, see if we have a green sitewide coupon for it
+              axios
+                .get(`https://api.simplycodes.com/v1/merchant/${lookupResults.merchantId}/promotions2`)
+                .then((promoResults) => {
+                  if (promoResults && promoResults.data && promoResults.data.promotions) {
+                    const hasGreenSitewide = promoResults.data.promotions.some((promo) => {
+                      return (promo.amountOff || promo.percentOff) && promo.isGreen & promo.is_storewide;
+                    });
 
-              // axios
-              //   .get(`https://api.simplycodes.com/v1/merchant/${lookupResults.merchantId}/promotions2`)
-              //   .then((result) => {
-              //     console.log(result);
-              //   });
+                    if (hasGreenSitewide) {
+                      return resolve(result.data.merchants[0]);
+                    }
+                  }
+
+                  return resolve(null);
+                });
+            } else {
+              return resolve(null);
             }
-
-            return resolve(null);
           })
           .catch(() => {
             return resolve(null);

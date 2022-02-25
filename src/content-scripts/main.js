@@ -181,9 +181,10 @@ const decorateShoppingSearchResults = () => {
   }
 };
 
+// Top reviews + sometimes shopping page results..
 const decorateShoppingTopReviews = () => {
   document
-    .querySelectorAll('#sh-sr__results .smsrc .sh-pr__product-result .sh-pr__secondary-container a')
+    .querySelectorAll('#sh-sr__results .sh-pr__product-result .sh-pr__secondary-container a')
     .forEach((element) => {
       const itemHref = element.getAttribute('href').replace('/url?q=', '');
       const discount = generateDiscount(itemHref);
