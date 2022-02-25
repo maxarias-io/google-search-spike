@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import VueCompositionAPI from '@vue/composition-api';
-// import { sendMessageToBackground } from '../utils/extension-messenger';
+import { onMessage } from '../utils/extension-messenger';
 import DiscountRibbon from '../components/DiscountRibbon.vue';
 
 Vue.use(VueCompositionAPI);
@@ -103,22 +103,24 @@ const decorateShoppingAdResults = () => {
       sellerContainer.append(discount);
     });
   } else {
-    document.querySelectorAll('.sh-sr__tau .sh-np__click-target').forEach((element) => {
-      const itemHref = element.getAttribute('href');
-      const discount = generateDiscount(itemHref);
-      discount.dataset.absolute = true;
+    document
+      .querySelectorAll('.sh-sr__tau .sh-np__click-target, .sh-sr__bau .smsrc .sh-np__click-target')
+      .forEach((element) => {
+        const itemHref = element.getAttribute('href');
+        const discount = generateDiscount(itemHref);
+        discount.dataset.absolute = true;
 
-      const saleElement = Array.from(element.querySelectorAll('div')).find((el) =>
-        GOOGLE_TAGS.includes(el.textContent.toUpperCase()),
-      );
+        const saleElement = Array.from(element.querySelectorAll('div')).find((el) =>
+          GOOGLE_TAGS.includes(el.textContent.toUpperCase()),
+        );
 
-      if (saleElement) {
-        discount.dataset.top = '32px';
-        discount.dataset.left = '8px';
-      }
+        if (saleElement) {
+          discount.dataset.top = '32px';
+          discount.dataset.left = '8px';
+        }
 
-      element.append(discount);
-    });
+        element.append(discount);
+      });
   }
 };
 
@@ -252,3 +254,9 @@ const init = () => {
 };
 
 window.addEventListener('load', init, false);
+
+onMessage('REFRESH_PROMOS', () => {
+  console.log('REFRESH!');
+  // TODO: Determine when Google fetches new results
+  // setTimeout(init, 250);
+});

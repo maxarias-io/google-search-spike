@@ -3,7 +3,7 @@ console.log('hello world background todo something~');
 import axios from 'axios';
 import { joaat } from '../utils/hash';
 import { domainFromUrl } from '../utils/url';
-import { onMessage } from '../utils/extension-messenger';
+import { onMessage, sendMessageToContentScript } from '../utils/extension-messenger';
 import browser from 'webextension-polyfill';
 
 let seedPromise = null;
@@ -190,3 +190,20 @@ onMessage('LOOK_UP_MERCHANT', async (url) => {
 });
 
 initAuth();
+
+const onCompletedListener = (details) => {
+  if (
+    details.method === 'GET' &&
+    details.url.includes('/search') &&
+    details.url.includes('start=') &&
+    details.url.includes('q=')
+  ) {
+    console.log(details.url);
+    console.log('BG REFRESH', details.url);
+    sendMessageToContentScript(details.tabId, 'REFRESH_PROMOS');
+  }
+};
+
+chrome.webRequest.onCompleted.addListener(onCompletedListener, {
+  urls: ['https://*.google.com/*'],
+});

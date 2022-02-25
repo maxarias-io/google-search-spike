@@ -4,7 +4,7 @@
   "homepage_url": "https://demand.io/",
   "background": {
     "scripts": ["js/background.js"],
-    "persistent": false
+    "persistent": true
   },
   "content_scripts": [
     {
@@ -12,7 +12,7 @@
       "js": ["js/main.js"]
     }
   ],
-  "permissions": ["*://*/*"],
+  "permissions": ["*://*/*", "activeTab", "webRequest"],
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'; img-src 'self' data: https://*;",
   "web_accessible_resources": ["js/*.map", "img/*"]
 }
