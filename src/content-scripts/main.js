@@ -84,7 +84,7 @@ const decorateRichResults = () => {
 // Decorates Shopping page Ads
 const decorateShoppingAdResults = () => {
   if (window.innerWidth > 768) {
-    document.querySelectorAll('.sh-sr__shop-result-group .sh-np__click-target').forEach((element) => {
+    document.querySelectorAll('.sh-sr__shop-result-group .sh-np__click-target, .pla-link').forEach((element) => {
       const shoppingItemHref = element.getAttribute('href');
 
       const discount = generateDiscount(shoppingItemHref);
@@ -100,7 +100,12 @@ const decorateShoppingAdResults = () => {
       }
 
       const sellerContainer = element.closest('.sh-np__click-target');
-      sellerContainer.append(discount);
+      if (sellerContainer) {
+        sellerContainer.append(discount);
+      } else {
+        element.parentElement.style.position = 'relative';
+        element.parentElement.append(discount);
+      }
     });
   } else {
     document
@@ -137,27 +142,41 @@ const decorateShoppingBestResult = () => {
 
 const decorateShoppingSearchResults = () => {
   if (window.innerWidth > 768) {
-    document.querySelectorAll('.sh-pr__product-results > div').forEach((element) => {
-      const itemAnchor = element.querySelector('a.shntl');
-      if (itemAnchor) {
-        const itemHref = itemAnchor.getAttribute('href').replace('/url?url=', '');
+    document
+      .querySelectorAll('.sh-pr__product-results > div, div[role="list"]  div[role="listitem"] article ')
+      .forEach((element) => {
+        const itemAnchor = element.querySelector('a.shntl');
 
-        // Special cases for products that link to a Google page for shopping, not a Merchant
-        if (!itemHref.startsWith('/shopping/product')) {
-          const discount = generateDiscount(itemHref);
-          discount.dataset.absolute = true;
+        if (itemAnchor) {
+          const itemHref = itemAnchor.getAttribute('href').replace('/url?url=', '');
 
-          const container = itemAnchor.closest('.sh-dgr__content');
+          // Special cases for products that link to a Google page for shopping, not a Merchant
+          if (!itemHref.startsWith('/shopping/product')) {
+            const discount = generateDiscount(itemHref);
+            discount.dataset.absolute = true;
 
-          if (container.previousElementSibling && container.previousElementSibling.innerText) {
-            discount.dataset.top = '32px';
-            discount.dataset.left = '8px';
+            const container = itemAnchor.closest('.sh-dgr__content');
+
+            if (container.previousElementSibling && container.previousElementSibling.innerText) {
+              discount.dataset.top = '32px';
+              discount.dataset.left = '8px';
+            }
+
+            container.append(discount);
           }
+        } else if (element.tagName === 'ARTICLE') {
+          const lastDiv = element.lastElementChild;
 
-          container.append(discount);
+          if (lastDiv && lastDiv.lastElementChild && lastDiv.lastElementChild.querySelector('a')) {
+            const itemHref = lastDiv.lastElementChild.querySelector('a').getAttribute('href');
+
+            const discount = generateDiscount(itemHref);
+            discount.dataset.absolute = true;
+
+            element.append(discount);
+          }
         }
-      }
-    });
+      });
   } else {
     // Mobile Shopping page
     document

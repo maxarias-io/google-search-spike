@@ -65,10 +65,9 @@ export default defineComponent({
     let intersectionObserver = null;
 
     const fetchData = () => {
-      if (props.url.startsWith('/aclk?')) {
-        sendMessageToBackground('DECODE_GOOGLE_URL', `https://www.google.com/${props.url}`).then((url) =>
-          fetchMerchant(url),
-        );
+      if (props.url.includes('/aclk?')) {
+        const urlToQuery = props.url.startsWith('/aclk?') ? `https://www.google.com/${props.url}` : props.url;
+        sendMessageToBackground('DECODE_GOOGLE_URL', urlToQuery).then((url) => fetchMerchant(url));
       } else {
         fetchMerchant(props.url);
       }
